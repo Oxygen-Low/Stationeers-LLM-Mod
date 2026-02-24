@@ -10,22 +10,11 @@ namespace LLMPlayer.Agent
         public static NPCManager Instance { get; private set; }
         private List<AgentController> _bots = new List<AgentController>();
 
-        /// <summary>
-        /// Assigns this object to the static Instance property to initialize the NPCManager singleton.
-        /// </summary>
-        /// <remarks>Called by Unity when the script instance is being loaded.</remarks>
         private void Awake()
         {
             Instance = this;
         }
 
-        /// <summary>
-        /// Creates a new NPC bot based on the local human player, places it near the local player, attaches an AgentController, and registers it with the manager.
-        /// </summary>
-        /// <remarks>
-        /// If the local human cannot be located, the method logs an error and returns without spawning.
-        /// This method also logs progress and success messages to the plugin logger.
-        /// </remarks>
         public void SpawnBot()
         {
             Plugin.Instance.Log.LogInfo("Attempting to spawn LLM Bot...");
@@ -43,21 +32,36 @@ namespace LLMPlayer.Agent
             GameObject botObj = Instantiate(localHuman.gameObject, localHuman.Position + localHuman.transform.forward * 2f, localHuman.transform.rotation);
             var botHuman = botObj.GetComponent<Human>();
 
-            // Remove local player specific components if any
-            // ...
+            // Sanitize bot: Remove/Disable local player specific components
+            // This is a list of typical components that might cause issues if cloned
+            string[] localComponents = { "LocalPlayerController", "InputHandler", "PlayerInput", "Camera", "AudioListener", "PlayerHUD" };
+            foreach (var compName in localComponents)
+            {
+                var comp = botObj.GetComponent(compName);
+                if (comp != null)
+                {
+                    if (comp is Behaviour b) b.enabled = false;
+                    else Destroy(comp);
+                }
+            }
+
+            // Also check children for cameras/listeners
+            foreach (var cam in botObj.GetComponentsInChildren<Camera>()) cam.enabled = false;
+            // Disable AudioListeners via reflection/name to avoid extra dependencies
+            foreach (var listener in botObj.GetComponentsInChildren<Behaviour>())
+            {
+                if (listener.GetType().Name == "AudioListener") listener.enabled = false;
+            }
 
             var controller = botObj.AddComponent<AgentController>();
             _bots.Add(controller);
 
-            Plugin.Instance.Log.LogInfo("LLM Bot spawned successfully.");
+            Plugin.Instance.Log.LogInfo("LLM Bot spawned and sanitized successfully.");
         }
 
-        /// <summary>
-        /// Enables or disables all managed NPC bots.
-        /// </summary>
-        /// <param name="active">True to activate each bot, false to deactivate each bot.</param>
         public void ToggleAllBots(bool active)
         {
+            _bots.RemoveAll(b => b == null);
             foreach (var bot in _bots)
             {
                 bot.SetActive(active);

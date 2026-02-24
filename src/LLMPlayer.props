@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <StationeersInstallPath Condition="'$(StationeersInstallPath)' == ''">$(MSBuildThisFileDirectory)../</StationeersInstallPath>
-    <ManagedPath>$(StationeersInstallPath)</ManagedPath>
+    <ManagedPath>$(StationeersInstallPath)rocketstation_Data/Managed/</ManagedPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">

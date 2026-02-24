@@ -12,26 +12,24 @@ namespace LLMPlayer.Perception
         private Camera _camera;
         private RenderTexture _renderTexture;
         private int _resolution;
+        private bool _isDestroyed = false;
 
-        /// <summary>
-        /// Configures the service with the camera to capture from and the square resolution to use for screenshots.
-        /// </summary>
-        /// <param name="targetCamera">The Camera whose output will be captured.</param>
-        /// <param name="resolution">The width and height, in pixels, of the square render texture to create.</param>
         public void Initialize(Camera targetCamera, int resolution)
         {
+            if (_renderTexture != null)
+            {
+                _renderTexture.Release();
+                Destroy(_renderTexture);
+            }
+
             _camera = targetCamera;
             _resolution = resolution;
             _renderTexture = new RenderTexture(_resolution, _resolution, 24);
         }
 
-        /// <summary>
-        /// Captures the current view from the configured camera and provides PNG-encoded image bytes via the callback.
-        /// </summary>
-        /// <param name="callback">Called with the PNG byte array of the captured square image at the configured resolution; may be invoked synchronously or asynchronously. If the internal camera is not set, the method returns without invoking this callback.</param>
         public void CaptureScreenshot(Action<byte[]> callback)
         {
-            if (_camera == null) return;
+            if (_camera == null || _isDestroyed) return;
 
             var oldTarget = _camera.targetTexture;
             _camera.targetTexture = _renderTexture;
@@ -41,6 +39,8 @@ namespace LLMPlayer.Perception
             if (SystemInfo.supportsAsyncGPUReadback)
             {
                 AsyncGPUReadback.Request(_renderTexture, 0, TextureFormat.RGB24, (request) => {
+                    if (_isDestroyed) return;
+
                     if (request.hasError)
                     {
                         CaptureSync(callback);
@@ -48,7 +48,9 @@ namespace LLMPlayer.Perception
                     else
                     {
                         var data = request.GetData<byte>();
-                        var pngBytes = ImageConversion.EncodeNativeArrayToPNG(data, _renderTexture.graphicsFormat, (uint)_resolution, (uint)_resolution);
+                        // Use RGB24 matching format
+                        var format = UnityEngine.Experimental.Rendering.GraphicsFormatUtility.GetGraphicsFormat(TextureFormat.RGB24, false);
+                        var pngBytes = ImageConversion.EncodeNativeArrayToPNG(data, format, (uint)_resolution, (uint)_resolution);
                         callback?.Invoke(pngBytes.ToArray());
                     }
                 });
@@ -59,10 +61,6 @@ namespace LLMPlayer.Perception
             }
         }
 
-        /// <summary>
-        /// Synchronously captures the contents of the internal render texture, encodes it as a PNG, and delivers the resulting bytes to the provided callback.
-        /// </summary>
-        /// <param name="callback">Callback invoked with the PNG-encoded image bytes; may be null.</param>
         private void CaptureSync(Action<byte[]> callback)
         {
             RenderTexture.active = _renderTexture;
@@ -76,19 +74,14 @@ namespace LLMPlayer.Perception
             callback?.Invoke(bytes);
         }
 
-        /// <summary>
-        /// Releases and destroys the internal RenderTexture when the component is destroyed.
-        /// </summary>
-        /// <remarks>
-        /// If a RenderTexture exists, this method releases its GPU resources and destroys the object to prevent memory leaks.
-        /// This is invoked by Unity when the GameObject or component is being removed.
-        /// </remarks>
         private void OnDestroy()
         {
+            _isDestroyed = true;
             if (_renderTexture != null)
             {
                 _renderTexture.Release();
                 Destroy(_renderTexture);
+                _renderTexture = null;
             }
         }
     }

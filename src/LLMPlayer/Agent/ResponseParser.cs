@@ -1,17 +1,11 @@
 using System;
 using System.Collections.Generic;
 using LLMPlayer.Core;
-using System.Text.RegularExpressions;
 
 namespace LLMPlayer.Agent
 {
     public class ResponseParser
     {
-        /// <summary>
-        /// Parses a textual agent response into an AgentDecision containing extracted reasoning and actions.
-        /// </summary>
-        /// <param name="response">The response text containing an optional "Reasoning:" line and an optional "Actions:" section; lines are separated by CR/LF or LF.</param>
-        /// <returns>An AgentDecision whose Reasoning is taken from the first line starting with "Reasoning:" and whose Actions are populated from subsequent lines beginning with "- NAME:".</returns>
         public static AgentDecision Parse(string response)
         {
             var decision = new AgentDecision();
@@ -32,7 +26,7 @@ namespace LLMPlayer.Agent
                     continue;
                 }
 
-                if (parsingActions && line.Trim().StartsWith("- NAME:"))
+                if (parsingActions && line.Trim().StartsWith("- NAME:", StringComparison.OrdinalIgnoreCase))
                 {
                     var action = ParseActionLine(line);
                     if (action != null)
@@ -44,11 +38,6 @@ namespace LLMPlayer.Agent
             return decision;
         }
 
-        /// <summary>
-        /// Parses a single action line formatted as comma-separated `key:value` pairs into an AgentAction.
-        /// </summary>
-        /// <param name="line">A single action line (typically starting with '-' and containing entries like `NAME:Action, param:value`).</param>
-        /// <returns>An AgentAction populated from the line's key/value pairs, or `null` if the line cannot be parsed.</returns>
         private static AgentAction ParseActionLine(string line)
         {
             try
@@ -58,20 +47,21 @@ namespace LLMPlayer.Agent
 
                 foreach (var part in parts)
                 {
-                    var kv = part.Split(':');
+                    var kv = part.Split(new[] { ':' }, 2);
                     if (kv.Length == 2)
                     {
-                        var key = kv[0].Trim().ToUpper();
+                        var key = kv[0].Trim().ToUpperInvariant();
                         var val = kv[1].Trim();
 
                         if (key == "NAME") action.Name = val;
-                        else action.Parameters[key.ToLower()] = val;
+                        else action.Parameters[key.ToLowerInvariant()] = val;
                     }
                 }
                 return action;
             }
-            catch
+            catch (Exception ex)
             {
+                Plugin.Instance.Log.LogError($"Error parsing action line '{line}': {ex.Message}");
                 return null;
             }
         }

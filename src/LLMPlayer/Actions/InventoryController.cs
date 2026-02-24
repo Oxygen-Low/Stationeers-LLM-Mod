@@ -7,25 +7,27 @@ namespace LLMPlayer.Actions
     {
         private readonly Human _human;
 
-        /// <summary>
-        /// Initializes a new InventoryController for the specified human.
-        /// </summary>
-        /// <param name="human">The Human whose inventory (slots/active hand) this controller will operate on.</param>
         public InventoryController(Human human)
         {
-            _human = human;
+            _human = human ?? throw new System.ArgumentNullException(nameof(human));
         }
 
-        /// <summary>
-        /// Sets the human's active inventory slot to the specified index when the index is within the valid range.
-        /// </summary>
-        /// <param name="index">Zero-based slot index to select; must be greater than or equal to 0 and less than the human's slot count. If out of range, no action is taken.</param>
         public void SelectSlot(int index)
         {
+            if (_human == null || _human.Slots == null) return;
+
             // Stationeers uses ActiveHandIndex or similar
             if (index >= 0 && index < _human.Slots.Count)
             {
-                Traverse.Create(_human).Method("CmdSwapActiveHand", index).GetValue();
+                var swapMethod = Traverse.Create(_human).Method("CmdSwapActiveHand", index);
+                if (swapMethod.MethodExists())
+                {
+                    swapMethod.GetValue();
+                }
+                else
+                {
+                    Plugin.Instance.Log.LogWarning($"Method 'CmdSwapActiveHand' not found on Human {_human.ReferenceId} for index {index}");
+                }
             }
         }
     }

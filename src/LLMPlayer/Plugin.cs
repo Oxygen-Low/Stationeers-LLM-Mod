@@ -35,9 +35,6 @@ namespace LLMPlayer
 
         private bool _aiActive = true;
 
-        /// <summary>
-        /// Initialize the plugin: set the singleton instance, apply Harmony patches, load configuration, log startup, and attach the NPCManager component.
-        /// </summary>
         private void Awake()
         {
             Instance = this;
@@ -52,27 +49,23 @@ namespace LLMPlayer
             gameObject.AddComponent<NPCManager>();
         }
 
-        /// <summary>
-        /// Monitors the configured toggle key and toggles global AI control for all NPCs when the key is pressed.
-        /// </summary>
-        /// <remarks>
-        /// The new AI state is logged and applied to all bots.
         private void Update()
         {
             if (ToggleAiKey.Value != KeyCode.None && Input.GetKeyDown(ToggleAiKey.Value))
             {
                 _aiActive = !_aiActive;
                 Log.LogInfo($"AI Control {(_aiActive ? "Enabled" : "Disabled")}");
-                NPCManager.Instance.ToggleAllBots(_aiActive);
+                if (NPCManager.Instance != null)
+                {
+                    NPCManager.Instance.ToggleAllBots(_aiActive);
+                }
+                else
+                {
+                    Log.LogWarning("NPCManager instance missing, cannot toggle bots.");
+                }
             }
         }
 
-        /// <summary>
-        /// Registers and binds all plugin configuration entries used at runtime.
-        /// </summary>
-        /// <remarks>
-        /// Initializes configuration sections and keys for LLM provider selection, provider endpoints and models (Ollama, OpenAI-compatible, Kobold), agent behavior (tick rate, toggle key), debug logging, and perception screenshot resolution.
-        /// </remarks>
         private void SetupConfig()
         {
             ProviderType = Config.Bind("LLM Settings", "ProviderType", LLMProviderType.Ollama, "The LLM provider to use.");
@@ -87,18 +80,14 @@ namespace LLMPlayer
             KoboldEndpoint = Config.Bind("Kobold", "Endpoint", "http://localhost:5001", "Kobold.cpp API endpoint.");
             KoboldModel = Config.Bind("Kobold", "Model", "", "Kobold.cpp model name (optional for some setups).");
 
-            AgentTickRate = Config.Bind("Agent", "TickRate", 1.0f, "How many times per second the agent should make a decision.");
+            AgentTickRate = Config.Bind("Agent", "TickRate", 1.0f,
+                new ConfigDescription("How many times per second the agent should make a decision.", new AcceptableValueRange<float>(0.1f, 20.0f)));
             DebugLogging = Config.Bind("Debug", "VerboseLogging", true, "Enable detailed debug logging.");
-            ScreenshotResolution = Config.Bind("Perception", "ResolutionScale", 512, "The square resolution of screenshots sent to LLM.");
+            ScreenshotResolution = Config.Bind("Perception", "ResolutionScale", 512,
+                new ConfigDescription("The square resolution of screenshots sent to LLM.", new AcceptableValueRange<int>(128, 1024)));
             ToggleAiKey = Config.Bind("Agent", "ToggleKey", KeyCode.F9, "Hotkey to toggle AI control for all bots.");
         }
 
-        /// <summary>
-        /// Cleans up plugin state when the GameObject is destroyed.
-        /// </summary>
-        /// <remarks>
-        /// Removes any Harmony patches applied by this plugin and logs an unload message.
-        /// </remarks>
         private void OnDestroy()
         {
             _harmony?.UnpatchSelf();

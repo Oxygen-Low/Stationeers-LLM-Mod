@@ -11,6 +11,7 @@ Available Actions:
 - LOOK(yaw, pitch): yaw and pitch are degrees to rotate (e.g., yaw: 45, pitch: 10)
 - SELECT_SLOT(index): index of the inventory slot to select
 - INTERACT: interact with the object in front of you
+- CONSTRUCT: specialized interaction for advancing construction states
 - JUMP: jump
 
 Output Format:

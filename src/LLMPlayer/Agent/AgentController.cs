@@ -15,19 +15,27 @@ namespace LLMPlayer.Agent
         private ILLMProvider _llmProvider;
         private bool _isActive = true;
 
-        /// <summary>
-        /// Initializes agent dependencies and starts the agent loop.
-        /// </summary>
-        /// <remarks>
-        /// Locates the Human component on this GameObject, creates the ActionDispatcher and LLM provider,
-        /// adds and configures a ScreenshotService with a dedicated child camera positioned near head height,
-        /// and starts the AgentLoop coroutine.
-        /// </remarks>
         private void Awake()
         {
             _human = GetComponent<Human>();
             _dispatcher = new ActionDispatcher(_human);
-            _llmProvider = LLMProviderFactory.CreateProvider();
+
+            try
+            {
+                _llmProvider = LLMProviderFactory.CreateProvider();
+                if (!_llmProvider.ValidateConfig(out string error))
+                {
+                    Plugin.Instance.Log.LogError($"LLM Config Validation Failed: {error}");
+                    _isActive = false;
+                    return;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Plugin.Instance.Log.LogError($"LLM Provider Initialization Failed: {ex.Message}");
+                _isActive = false;
+                return;
+            }
 
             _screenshotService = gameObject.AddComponent<ScreenshotService>();
 
@@ -43,12 +51,18 @@ namespace LLMPlayer.Agent
             StartCoroutine(AgentLoop());
         }
 
-        /// <summary>
-        /// Main agent loop coroutine that periodically observes the environment, queries the LLM for a decision, and dispatches resulting actions.
-        /// </summary>
-        /// <returns>An IEnumerator suitable for starting as a Unity coroutine; the loop continues while the controller's active flag is set.</returns>
         private IEnumerator AgentLoop()
         {
+            // Health check before starting
+            var healthTask = _llmProvider.CheckHealthAsync();
+            yield return new WaitUntil(() => healthTask.IsCompleted);
+            if (healthTask.IsFaulted || !healthTask.Result)
+            {
+                Plugin.Instance.Log.LogError("LLM Provider health check failed. Agent loop will not start.");
+                _isActive = false;
+                yield break;
+            }
+
             while (_isActive)
             {
                 yield return new WaitForSeconds(1.0f / Plugin.Instance.AgentTickRate.Value);
@@ -63,14 +77,39 @@ namespace LLMPlayer.Agent
                     captureDone = true;
                 });
 
-                yield return new WaitUntil(() => captureDone);
+                float captureTimeout = 5.0f;
+                float captureTimer = 0;
+                while (!captureDone && captureTimer < captureTimeout)
+                {
+                    captureTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (!captureDone)
+                {
+                    Plugin.Instance.Log.LogWarning("Screenshot capture timed out.");
+                    continue;
+                }
 
                 var context = GameStateExtractor.Extract(_human);
                 var prompt = ContextBuilder.BuildPrompt(context);
 
                 // 2. Reason (Query LLM)
                 var task = _llmProvider.GetResponseAsync(screenshot, PromptTemplates.SystemPrompt, prompt);
-                yield return new WaitUntil(() => task.IsCompleted);
+
+                float llmTimeout = 30.0f;
+                float llmTimer = 0;
+                while (!task.IsCompleted && llmTimer < llmTimeout)
+                {
+                    llmTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (!task.IsCompleted)
+                {
+                    Plugin.Instance.Log.LogWarning("LLM Request timed out.");
+                    continue;
+                }
 
                 if (task.IsFaulted)
                 {
@@ -82,6 +121,8 @@ namespace LLMPlayer.Agent
 
                 // 3. Parse & Act
                 var decision = ResponseParser.Parse(response);
+                if (decision == null) continue;
+
                 if (Plugin.Instance.DebugLogging.Value)
                 {
                     Plugin.Instance.Log.LogInfo($"Agent Reasoning: {decision.Reasoning}");
@@ -91,13 +132,6 @@ namespace LLMPlayer.Agent
             }
         }
 
-        /// <summary>
-        /// Enable or disable the agent's main execution loop.
-        /// </summary>
-        /// <remarks>
-        /// If the requested state equals the current state, the method does nothing.
-        /// </remarks>
-        /// <param name="active">`true` to start the AgentLoop coroutine; `false` to stop all running coroutines.</param>
         public void SetActive(bool active)
         {
             if (_isActive == active) return;

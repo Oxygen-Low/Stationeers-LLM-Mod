@@ -10,11 +10,6 @@ namespace LLMPlayer.Perception
 {
     public class GameStateExtractor
     {
-        /// <summary>
-        /// Builds a GameContext representing the provided human's current state.
-        /// </summary>
-        /// <param name="human">The human whose visible and measurable state should be captured. If null, an empty GameContext is returned.</param>
-        /// <returns>A GameContext populated with the human's Position, Rotation, FacingDirection, Inventory entries (slot key and occupant or "Empty"), HeldItem (if any), NearbyObjects (each with Name, Distance, and BuildState), and Health.</returns>
         public static GameContext Extract(Human human)
         {
             var context = new GameContext();
@@ -40,23 +35,33 @@ namespace LLMPlayer.Perception
 
             // Held Item
             // Using reflection/AccessTools because these might be internal or obfuscated in some versions
-            var activeSlot = Traverse.Create(human).Property("ActiveHandSlot").Method("Get").GetValue<Slot>();
-            if (activeSlot != null)
+            var activeHandTraverse = Traverse.Create(human).Property("ActiveHandSlot");
+            if (activeHandTraverse.PropertyExists())
             {
-                var occupant = activeSlot.Get();
-                if (occupant != null)
+                var activeSlot = activeHandTraverse.Method("Get").GetValue<Slot>();
+                if (activeSlot != null)
                 {
-                    context.HeldItem = occupant.DisplayName;
+                    var occupant = activeSlot.Get();
+                    if (occupant != null)
+                    {
+                        context.HeldItem = occupant.DisplayName;
+                    }
                 }
+            }
+            else
+            {
+                Plugin.Instance.Log.LogWarning($"Property 'ActiveHandSlot' not found on Human {human.ReferenceId}");
             }
 
             // Nearby Objects (Simple sphere cast or distance check)
             var colliders = Physics.OverlapSphere(human.Position, 10f);
+            HashSet<Thing> seenThings = new HashSet<Thing>();
             foreach (var col in colliders)
             {
                 var thing = col.GetComponentInParent<Thing>();
-                if (thing != null && thing != human)
+                if (thing != null && thing != human && !seenThings.Contains(thing))
                 {
+                    seenThings.Add(thing);
                     context.NearbyObjects.Add(new InteractableObject
                     {
                         Name = thing.DisplayName,
@@ -66,17 +71,20 @@ namespace LLMPlayer.Perception
                 }
             }
 
-            context.Health = Traverse.Create(human).Field("Health").GetValue<float>();
+            var healthTraverse = Traverse.Create(human).Field("Health");
+            if (healthTraverse.FieldExists())
+            {
+                context.Health = healthTraverse.GetValue<float>();
+            }
+            else
+            {
+                Plugin.Instance.Log.LogWarning($"Field 'Health' not found on Human {human.ReferenceId}");
+            }
             // context.SuitStatus = human.SuitStatus; // Need to find real field
 
             return context;
         }
 
-        /// <summary>
-        /// Determine the construction/build state of the given Thing.
-        /// </summary>
-        /// <param name="thing">The Thing whose build state should be reported.</param>
-        /// <returns>A short string describing the Thing's build or construction state (for example: "Unknown", "Built", "UnderConstruction").</returns>
         private static string GetBuildState(Thing thing)
         {
             // Stationeers things often have a CurrentBuildStep

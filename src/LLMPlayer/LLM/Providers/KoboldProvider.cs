@@ -13,81 +13,74 @@ namespace LLMPlayer.LLM.Providers
         private readonly string _endpoint;
         private readonly string _model;
 
-        /// <summary>
-        /// Initializes a new instance of KoboldProvider with the specified Kobold API endpoint and model name.
-        /// </summary>
-        /// <param name="endpoint">Base URL of the Kobold API (for example, "http://host:port").</param>
-        /// <param name="model">Model name to target on the Kobold server.</param>
         public KoboldProvider(string endpoint, string model)
         {
             _endpoint = endpoint.TrimEnd('/');
             _model = model;
         }
 
-        /// <summary>
-        /// Sends a multimodal request (image plus prompts) to the configured Kobold endpoint and returns the assistant's generated text.
-        /// </summary>
-        /// <param name="imageBytes">Image data as a byte array; it will be Base64-encoded for the request.</param>
-        /// <param name="systemPrompt">System-level prompt that guides the assistant's behavior.</param>
-        /// <param name="userMessage">User-provided message to include in the prompt.</param>
-        /// <returns>The assistant's generated text from the first result, or an error string prefixed with "Error: " if the request fails or an exception occurs.</returns>
         public async Task<string> GetResponseAsync(byte[] imageBytes, string systemPrompt, string userMessage)
         {
-            try
+            using (var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(30)))
             {
-                // Kobold.cpp standard multimodal format
-                var payload = new
+                try
                 {
-                    prompt = $"{systemPrompt}\n\nUser: {userMessage}\nAssistant:",
-                    images = new[] { Convert.ToBase64String(imageBytes) },
-                    max_context_length = 2048,
-                    max_length = 512,
-                    quiet = true
-                };
+                    // Kobold.cpp standard multimodal format
+                    var payload = new
+                    {
+                        prompt = $"{systemPrompt}\n\nUser: {userMessage}\nAssistant:",
+                        images = new[] { Convert.ToBase64String(imageBytes) },
+                        max_context_length = 2048,
+                        max_length = 512,
+                        quiet = true
+                    };
 
-                var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-                var response = await _httpClient.PostAsync($"{_endpoint}/api/v1/generate", content);
+                    var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+                    var response = await _httpClient.PostAsync($"{_endpoint}/api/v1/generate", content, cts.Token);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseBody = await response.Content.ReadAsStringAsync();
-                    var result = JsonConvert.DeserializeObject<KoboldResponse>(responseBody);
-                    return result.results[0].text;
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        var result = JsonConvert.DeserializeObject<KoboldResponse>(responseBody);
+                        if (result != null && result.results != null && result.results.Count > 0)
+                        {
+                            return result.results[0].text;
+                        }
+                        return "Error: Empty response from Kobold provider.";
+                    }
+                    else
+                    {
+                        return $"Error: {response.StatusCode}";
+                    }
                 }
-                else
+                catch (System.OperationCanceledException)
                 {
-                    return $"Error: {response.StatusCode}";
+                    return "Error: Kobold request timed out.";
                 }
-            }
-            catch (Exception ex)
-            {
-                Plugin.Instance.Log.LogError($"Kobold Error: {ex.Message}");
-                return $"Error: {ex.Message}";
+                catch (Exception ex)
+                {
+                    Plugin.Instance.Log.LogError($"Kobold Error: {ex.Message}");
+                    return $"Error: {ex.Message}";
+                }
             }
         }
 
-        /// <summary>
-        /// Checks whether the configured Kobold model endpoint is healthy.
-        /// </summary>
-        /// <returns>`true` if the endpoint responded with a successful HTTP status code, `false` otherwise (including network or request errors).</returns>
         public async Task<bool> CheckHealthAsync()
         {
-            try
+            using (var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5)))
             {
-                var response = await _httpClient.GetAsync($"{_endpoint}/api/v1/model");
-                return response.IsSuccessStatusCode;
-            }
-            catch
-            {
-                return false;
+                try
+                {
+                    var response = await _httpClient.GetAsync($"{_endpoint}/api/v1/model", cts.Token);
+                    return response.IsSuccessStatusCode;
+                }
+                catch
+                {
+                    return false;
+                }
             }
         }
 
-        /// <summary>
-        /// Validates that a Kobold endpoint is configured for this provider.
-        /// </summary>
-        /// <param name="error">When validation fails, contains an explanatory error message; otherwise <c>null</c>.</param>
-        /// <returns><c>true</c> if the endpoint is configured, <c>false</c> otherwise.</returns>
         public bool ValidateConfig(out string error)
         {
             if (string.IsNullOrEmpty(_endpoint))

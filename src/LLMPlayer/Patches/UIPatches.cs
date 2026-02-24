@@ -9,10 +9,6 @@ namespace LLMPlayer.Patches
     [HarmonyPatch(typeof(InGameMenu))]
     public class UIPatches
     {
-        /// <summary>
-        /// Injects a "SPAWN LLM BOT" button into the provided in-game menu by cloning the existing Respawn button and wiring its click handler to spawn an LLM bot.
-        /// </summary>
-        /// <param name="__instance">The InGameMenu instance being patched.</param>
         [HarmonyPatch("Awake")]
         [HarmonyPostfix]
         public static void AwakePostfix(InGameMenu __instance)
@@ -32,10 +28,20 @@ namespace LLMPlayer.Patches
                 if (text != null) text.text = "SPAWN LLM BOT";
 
                 var button = newBtn.GetComponent<Button>();
-                button.onClick.RemoveAllListeners();
-                button.onClick.AddListener(() => {
-                    NPCManager.Instance.SpawnBot();
-                });
+                if (button != null)
+                {
+                    button.onClick.RemoveAllListeners();
+                    button.onClick.AddListener(() => {
+                        if (NPCManager.Instance != null)
+                        {
+                            NPCManager.Instance.SpawnBot();
+                        }
+                        else
+                        {
+                            Plugin.Instance.Log.LogWarning("NPCManager instance missing, cannot spawn bot.");
+                        }
+                    });
+                }
             }
         }
     }

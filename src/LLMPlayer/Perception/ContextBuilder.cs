@@ -6,18 +6,17 @@ namespace LLMPlayer.Perception
 {
     public class ContextBuilder
     {
-        /// <summary>
-        /// Builds a human-readable prompt describing the provided game's current state, inventory, and nearby objects.
-        /// </summary>
-        /// <param name="context">The game context containing position, facing direction, health, held item, inventory and nearby objects to include in the prompt.</param>
-        /// <returns>A formatted multiline string with sections "Current Game State:", "Inventory:", and "Nearby Objects:"; nearby objects are ordered by distance and limited to the nearest 10, each shown as "Name at X.Xm (State: BuildState)".</returns>
         public static string BuildPrompt(GameContext context)
         {
             var sb = new StringBuilder();
             sb.AppendLine("Current Game State:");
             sb.AppendLine($"- Position: {context.Position}");
             sb.AppendLine($"- Facing: {context.FacingDirection}");
-            sb.AppendLine($"- Health: {context.Health}%");
+
+            float health = context.Health;
+            if (health <= 1.0f) health *= 100f; // Scale 0-1 to 0-100
+            sb.AppendLine($"- Health: {health:F1}%");
+
             sb.AppendLine($"- Held Item: {context.HeldItem ?? "None"}");
 
             sb.AppendLine("\nInventory:");
