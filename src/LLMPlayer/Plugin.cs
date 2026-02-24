@@ -35,6 +35,9 @@ namespace LLMPlayer
 
         private bool _aiActive = true;
 
+        /// <summary>
+        /// Initialize the plugin: set the singleton instance, apply Harmony patches, load configuration, log startup, and attach the NPCManager component.
+        /// </summary>
         private void Awake()
         {
             Instance = this;
@@ -49,6 +52,11 @@ namespace LLMPlayer
             gameObject.AddComponent<NPCManager>();
         }
 
+        /// <summary>
+        /// Monitors the configured toggle key and toggles global AI control for all NPCs when the key is pressed.
+        /// </summary>
+        /// <remarks>
+        /// The new AI state is logged and applied to all bots.
         private void Update()
         {
             if (ToggleAiKey.Value != KeyCode.None && Input.GetKeyDown(ToggleAiKey.Value))
@@ -59,6 +67,12 @@ namespace LLMPlayer
             }
         }
 
+        /// <summary>
+        /// Registers and binds all plugin configuration entries used at runtime.
+        /// </summary>
+        /// <remarks>
+        /// Initializes configuration sections and keys for LLM provider selection, provider endpoints and models (Ollama, OpenAI-compatible, Kobold), agent behavior (tick rate, toggle key), debug logging, and perception screenshot resolution.
+        /// </remarks>
         private void SetupConfig()
         {
             ProviderType = Config.Bind("LLM Settings", "ProviderType", LLMProviderType.Ollama, "The LLM provider to use.");
@@ -79,6 +93,12 @@ namespace LLMPlayer
             ToggleAiKey = Config.Bind("Agent", "ToggleKey", KeyCode.F9, "Hotkey to toggle AI control for all bots.");
         }
 
+        /// <summary>
+        /// Cleans up plugin state when the GameObject is destroyed.
+        /// </summary>
+        /// <remarks>
+        /// Removes any Harmony patches applied by this plugin and logs an unload message.
+        /// </remarks>
         private void OnDestroy()
         {
             _harmony?.UnpatchSelf();

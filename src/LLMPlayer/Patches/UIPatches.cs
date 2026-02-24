@@ -9,6 +9,10 @@ namespace LLMPlayer.Patches
     [HarmonyPatch(typeof(InGameMenu))]
     public class UIPatches
     {
+        /// <summary>
+        /// Injects a "SPAWN LLM BOT" button into the provided in-game menu by cloning the existing Respawn button and wiring its click handler to spawn an LLM bot.
+        /// </summary>
+        /// <param name="__instance">The InGameMenu instance being patched.</param>
         [HarmonyPatch("Awake")]
         [HarmonyPostfix]
         public static void AwakePostfix(InGameMenu __instance)

@@ -10,11 +10,22 @@ namespace LLMPlayer.Agent
         public static NPCManager Instance { get; private set; }
         private List<AgentController> _bots = new List<AgentController>();
 
+        /// <summary>
+        /// Assigns this object to the static Instance property to initialize the NPCManager singleton.
+        /// </summary>
+        /// <remarks>Called by Unity when the script instance is being loaded.</remarks>
         private void Awake()
         {
             Instance = this;
         }
 
+        /// <summary>
+        /// Creates a new NPC bot based on the local human player, places it near the local player, attaches an AgentController, and registers it with the manager.
+        /// </summary>
+        /// <remarks>
+        /// If the local human cannot be located, the method logs an error and returns without spawning.
+        /// This method also logs progress and success messages to the plugin logger.
+        /// </remarks>
         public void SpawnBot()
         {
             Plugin.Instance.Log.LogInfo("Attempting to spawn LLM Bot...");
@@ -41,6 +52,10 @@ namespace LLMPlayer.Agent
             Plugin.Instance.Log.LogInfo("LLM Bot spawned successfully.");
         }
 
+        /// <summary>
+        /// Enables or disables all managed NPC bots.
+        /// </summary>
+        /// <param name="active">True to activate each bot, false to deactivate each bot.</param>
         public void ToggleAllBots(bool active)
         {
             foreach (var bot in _bots)

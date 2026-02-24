@@ -10,6 +10,11 @@ namespace LLMPlayer.Perception
 {
     public class GameStateExtractor
     {
+        /// <summary>
+        /// Builds a GameContext representing the provided human's current state.
+        /// </summary>
+        /// <param name="human">The human whose visible and measurable state should be captured. If null, an empty GameContext is returned.</param>
+        /// <returns>A GameContext populated with the human's Position, Rotation, FacingDirection, Inventory entries (slot key and occupant or "Empty"), HeldItem (if any), NearbyObjects (each with Name, Distance, and BuildState), and Health.</returns>
         public static GameContext Extract(Human human)
         {
             var context = new GameContext();
@@ -67,6 +72,11 @@ namespace LLMPlayer.Perception
             return context;
         }
 
+        /// <summary>
+        /// Determine the construction/build state of the given Thing.
+        /// </summary>
+        /// <param name="thing">The Thing whose build state should be reported.</param>
+        /// <returns>A short string describing the Thing's build or construction state (for example: "Unknown", "Built", "UnderConstruction").</returns>
         private static string GetBuildState(Thing thing)
         {
             // Stationeers things often have a CurrentBuildStep

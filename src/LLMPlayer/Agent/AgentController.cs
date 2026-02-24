@@ -15,6 +15,14 @@ namespace LLMPlayer.Agent
         private ILLMProvider _llmProvider;
         private bool _isActive = true;
 
+        /// <summary>
+        /// Initializes agent dependencies and starts the agent loop.
+        /// </summary>
+        /// <remarks>
+        /// Locates the Human component on this GameObject, creates the ActionDispatcher and LLM provider,
+        /// adds and configures a ScreenshotService with a dedicated child camera positioned near head height,
+        /// and starts the AgentLoop coroutine.
+        /// </remarks>
         private void Awake()
         {
             _human = GetComponent<Human>();
@@ -35,6 +43,10 @@ namespace LLMPlayer.Agent
             StartCoroutine(AgentLoop());
         }
 
+        /// <summary>
+        /// Main agent loop coroutine that periodically observes the environment, queries the LLM for a decision, and dispatches resulting actions.
+        /// </summary>
+        /// <returns>An IEnumerator suitable for starting as a Unity coroutine; the loop continues while the controller's active flag is set.</returns>
         private IEnumerator AgentLoop()
         {
             while (_isActive)
@@ -79,6 +91,13 @@ namespace LLMPlayer.Agent
             }
         }
 
+        /// <summary>
+        /// Enable or disable the agent's main execution loop.
+        /// </summary>
+        /// <remarks>
+        /// If the requested state equals the current state, the method does nothing.
+        /// </remarks>
+        /// <param name="active">`true` to start the AgentLoop coroutine; `false` to stop all running coroutines.</param>
         public void SetActive(bool active)
         {
             if (_isActive == active) return;

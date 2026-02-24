@@ -5,6 +5,11 @@ namespace LLMPlayer.LLM
 {
     public static class LLMProviderFactory
     {
+        /// <summary>
+        /// Creates an ILLMProvider instance based on the current plugin configuration.
+        /// </summary>
+        /// <returns>An ILLMProvider configured according to Plugin.Instance.ProviderType and its related settings.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when Plugin.Instance.ProviderType has an unsupported value.</exception>
         public static ILLMProvider CreateProvider()
         {
             var config = Plugin.Instance;
