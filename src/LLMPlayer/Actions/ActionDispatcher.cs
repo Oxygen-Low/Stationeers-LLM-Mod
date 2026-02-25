@@ -46,16 +46,19 @@ namespace LLMPlayer.Actions
 
             string actionName = action.Name.ToUpperInvariant();
             Plugin.Instance.Log.LogInfo($"Executing Action: {actionName}");
+
+            var parameters = action.Parameters ?? new Dictionary<string, string>();
+
             switch (actionName)
             {
                 case "MOVE":
-                    HandleMove(action.Parameters);
+                    HandleMove(parameters);
                     break;
                 case "LOOK":
-                    HandleLook(action.Parameters);
+                    HandleLook(parameters);
                     break;
                 case "SELECT_SLOT":
-                    HandleSelectSlot(action.Parameters);
+                    HandleSelectSlot(parameters);
                     break;
                 case "INTERACT":
                     _interaction.Interact();

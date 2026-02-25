@@ -46,7 +46,7 @@ namespace LLMPlayer
             Logger.LogInfo($"{NAME} {VERSION} loaded!");
 
             // Initialize NPC Manager and other systems
-            if (gameObject.GetComponent<NPCManager>() == null)
+            if (LLMPlayer.Agent.NPCManager.Instance == null)
             {
                 gameObject.AddComponent<NPCManager>();
             }

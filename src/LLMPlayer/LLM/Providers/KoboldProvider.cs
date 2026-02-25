@@ -30,12 +30,17 @@ namespace LLMPlayer.LLM.Providers
                     var payload = new
                     {
                         prompt = $"{systemPrompt}\n\nUser: {userMessage}\nAssistant:",
-                        images = new[] { Convert.ToBase64String(imageBytes) },
+                        images = (imageBytes != null && imageBytes.Length > 0) ? new[] { Convert.ToBase64String(imageBytes) } : new string[0],
                         max_context_length = 2048,
                         max_length = 512,
                         quiet = true,
                         model = _model
                     };
+
+                    if (imageBytes == null || imageBytes.Length == 0)
+                    {
+                        Plugin.Instance.Log.LogWarning("Kobold Provider: Image bytes are null or empty. Sending text-only request.");
+                    }
 
                     var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
                     var response = await _httpClient.PostAsync($"{_endpoint}/api/v1/generate", content, cts.Token);

@@ -51,6 +51,5 @@ BepInEx/
 *.so
 *.dylib
 
-# Specific project files to keep
-!LLMPlayer.sln
-!src/LLMPlayer/LLMPlayer.csproj
+# Visual Studio solution and project files are intentionally not ignored
+# as they are hand-authored for this mod.

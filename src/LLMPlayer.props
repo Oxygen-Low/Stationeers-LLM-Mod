@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <Target Name="ValidateInstallPaths" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('$(StationeersInstallPath)')" Text="StationeersInstallPath does not exist: $(StationeersInstallPath)" />
-    <Error Condition="!Exists('$(ManagedPath)')" Text="ManagedPath does not exist: $(ManagedPath)" />
-    <Error Condition="!Exists('$(BepInExCorePath)')" Text="BepInExCorePath does not exist: $(BepInExCorePath)" />
+    <Error Condition="!Exists('$(StationeersInstallPath)Stationeers.exe') AND !Exists('$(StationeersInstallPath)Stationeers.x86_64')" Text="Stationeers executable not found in: $(StationeersInstallPath)" />
+    <Error Condition="!Exists('$(ManagedPath)Assembly-CSharp.dll')" Text="Assembly-CSharp.dll not found in: $(ManagedPath)" />
+    <Error Condition="!Exists('$(BepInExCorePath)BepInEx.Core.dll') AND !Exists('$(BepInExCorePath)BepInEx.dll')" Text="BepInEx core assembly not found in: $(BepInExCorePath)" />
   </Target>
 
   <ItemGroup>
@@ -58,6 +58,10 @@
     </Reference>
     <Reference Include="0Harmony">
       <HintPath>$(BepInExCorePath)0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ManagedPath)Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

@@ -17,7 +17,7 @@ namespace LLMPlayer.Actions
         {
             try
             {
-                if (_human != null && _human.transform != null)
+                if (_human.transform != null)
                 {
                     _human.transform.Rotate(Vector3.up, degrees);
                 }

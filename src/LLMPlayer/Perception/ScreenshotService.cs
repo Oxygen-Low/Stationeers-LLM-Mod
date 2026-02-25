@@ -20,6 +20,14 @@ namespace LLMPlayer.Perception
             {
                 _renderTexture.Release();
                 Destroy(_renderTexture);
+                _renderTexture = null;
+            }
+
+            if (targetCamera == null)
+            {
+                Plugin.Instance.Log.LogWarning("ScreenshotService.Initialize received a null targetCamera. Capture will not be possible.");
+                _camera = null;
+                return;
             }
 
             if (resolution <= 0) resolution = 256; // Sane default

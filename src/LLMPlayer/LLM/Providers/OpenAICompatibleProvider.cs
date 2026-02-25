@@ -63,6 +63,10 @@ namespace LLMPlayer.LLM.Providers
                 }
                 return "Error: Empty response from OpenAI compatible provider.";
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 Plugin.Instance.Log.LogError($"OpenAI Error: {ex.Message}");
@@ -81,6 +85,10 @@ namespace LLMPlayer.LLM.Providers
                 var options = new ChatCompletionOptions { MaxOutputTokenCount = 1 };
                 await _client.CompleteChatAsync(messages, options, cancellationToken);
                 return true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
