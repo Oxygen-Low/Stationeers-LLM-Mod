@@ -47,8 +47,6 @@ DerivedData/
 
 # BepInEx and C# build artifacts
 BepInEx/
-BepInEx/config/
-BepInEx/core/
 *.dll
 *.so
 *.dylib

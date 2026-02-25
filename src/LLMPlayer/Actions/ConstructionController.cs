@@ -14,8 +14,6 @@ namespace LLMPlayer.Actions
 
         public void Construct()
         {
-            if (_human == null) return;
-
             try
             {
                 // Construction in Stationeers involves using a tool or material on a frame.

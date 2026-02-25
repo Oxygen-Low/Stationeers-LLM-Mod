@@ -4,6 +4,13 @@
     <ManagedPath>$(StationeersInstallPath)rocketstation_Data/Managed/</ManagedPath>
     <BepInExCorePath>$(StationeersInstallPath)BepInEx/core/</BepInExCorePath>
   </PropertyGroup>
+
+  <Target Name="ValidateInstallPaths" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(StationeersInstallPath)')" Text="StationeersInstallPath does not exist: $(StationeersInstallPath)" />
+    <Error Condition="!Exists('$(ManagedPath)')" Text="ManagedPath does not exist: $(ManagedPath)" />
+    <Error Condition="!Exists('$(BepInExCorePath)')" Text="BepInExCorePath does not exist: $(BepInExCorePath)" />
+  </Target>
+
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>$(ManagedPath)Assembly-CSharp.dll</HintPath>

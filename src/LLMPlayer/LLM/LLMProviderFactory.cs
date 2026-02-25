@@ -29,6 +29,8 @@ namespace LLMPlayer.LLM
                 case LLMProviderType.Kobold:
                     if (string.IsNullOrWhiteSpace(config.KoboldEndpoint.Value))
                         throw new ArgumentException("Kobold endpoint is empty");
+                    if (string.IsNullOrWhiteSpace(config.KoboldModel.Value))
+                        throw new ArgumentException("Kobold model is empty");
                     return new KoboldProvider(config.KoboldEndpoint.Value, config.KoboldModel.Value);
 
                 default:

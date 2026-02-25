@@ -25,9 +25,14 @@ namespace LLMPlayer.Actions
 
         public void Dispatch(AgentDecision decision)
         {
+            if (decision == null || decision.Actions == null) return;
+
             foreach (var action in decision.Actions)
             {
-                ExecuteAction(action);
+                if (action != null)
+                {
+                    ExecuteAction(action);
+                }
             }
         }
 

@@ -46,7 +46,10 @@ namespace LLMPlayer
             Logger.LogInfo($"{NAME} {VERSION} loaded!");
 
             // Initialize NPC Manager and other systems
-            gameObject.AddComponent<NPCManager>();
+            if (gameObject.GetComponent<NPCManager>() == null)
+            {
+                gameObject.AddComponent<NPCManager>();
+            }
         }
 
         private void Update()
@@ -79,10 +82,21 @@ namespace LLMPlayer
             OpenAIKey = System.Environment.GetEnvironmentVariable("STATIONEERS_LLM_OPENAI_KEY");
             if (string.IsNullOrEmpty(OpenAIKey))
             {
-                string keyPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Info.Location), "llm_openai_key.txt");
-                if (System.IO.File.Exists(keyPath))
+                try
                 {
-                    OpenAIKey = System.IO.File.ReadAllText(keyPath).Trim();
+                    string keyPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Info.Location), "llm_openai_key.txt");
+                    if (System.IO.File.Exists(keyPath))
+                    {
+                        string val = System.IO.File.ReadAllText(keyPath).Trim();
+                        if (!string.IsNullOrWhiteSpace(val))
+                        {
+                            OpenAIKey = val;
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    Log.LogError($"Failed to read OpenAI API key from file: {ex.Message}");
                 }
             }
 

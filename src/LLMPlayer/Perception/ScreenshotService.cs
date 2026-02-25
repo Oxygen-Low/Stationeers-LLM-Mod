@@ -22,6 +22,8 @@ namespace LLMPlayer.Perception
                 Destroy(_renderTexture);
             }
 
+            if (resolution <= 0) resolution = 256; // Sane default
+
             _camera = targetCamera;
             _resolution = resolution;
             _renderTexture = new RenderTexture(_resolution, _resolution, 24);

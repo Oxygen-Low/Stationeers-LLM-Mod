@@ -70,32 +70,36 @@ namespace LLMPlayer.Agent
             }
 
             // Health check before starting
-            var healthTask = _llmProvider.CheckHealthAsync(System.Threading.CancellationToken.None);
-            float healthTimer = 0;
-            while (!healthTask.IsCompleted && healthTimer < HEALTH_CHECK_TIMEOUT)
+            using (var cts = new System.Threading.CancellationTokenSource())
             {
-                healthTimer += Time.deltaTime;
-                yield return null;
-            }
+                var healthTask = _llmProvider.CheckHealthAsync(cts.Token);
+                float healthTimer = 0;
+                while (!healthTask.IsCompleted && healthTimer < HEALTH_CHECK_TIMEOUT)
+                {
+                    healthTimer += Time.deltaTime;
+                    yield return null;
+                }
 
-            if (!healthTask.IsCompleted)
-            {
-                Plugin.Instance.Log.LogError("LLM Provider health check timed out. Agent loop will not start.");
-                _isActive = false;
-                yield break;
-            }
+                if (!healthTask.IsCompleted)
+                {
+                    cts.Cancel();
+                    Plugin.Instance.Log.LogError("LLM Provider health check timed out. Agent loop will not start.");
+                    _isActive = false;
+                    yield break;
+                }
 
-            if (healthTask.IsFaulted || !healthTask.Result)
-            {
-                Plugin.Instance.Log.LogError("LLM Provider health check failed or returned unhealthy. Agent loop will not start.");
-                _isActive = false;
-                yield break;
+                if (healthTask.IsFaulted || !healthTask.Result)
+                {
+                    Plugin.Instance.Log.LogError("LLM Provider health check failed or returned unhealthy. Agent loop will not start.");
+                    _isActive = false;
+                    yield break;
+                }
             }
 
             while (_isActive)
             {
                 float tickRate = Plugin.Instance.AgentTickRate.Value;
-                if (tickRate <= 0.01f) tickRate = 0.01f; // Avoid division by zero
+                if (tickRate <= 0.05f) tickRate = 0.05f; // Guard against zero or negative tick-rate
                 yield return new WaitForSeconds(1.0f / tickRate);
 
                 if (_human == null || _human.IsDead) continue;
@@ -126,40 +130,44 @@ namespace LLMPlayer.Agent
                 var prompt = ContextBuilder.BuildPrompt(context);
 
                 // 2. Reason (Query LLM)
-                var task = _llmProvider.GetResponseAsync(screenshot, PromptTemplates.SystemPrompt, prompt, System.Threading.CancellationToken.None);
-
-                float llmTimeout = 30.0f;
-                float llmTimer = 0;
-                while (!task.IsCompleted && llmTimer < llmTimeout)
+                using (var cts = new System.Threading.CancellationTokenSource())
                 {
-                    llmTimer += Time.deltaTime;
-                    yield return null;
+                    var task = _llmProvider.GetResponseAsync(screenshot, PromptTemplates.SystemPrompt, prompt, cts.Token);
+
+                    float llmTimeout = 30.0f;
+                    float llmTimer = 0;
+                    while (!task.IsCompleted && llmTimer < llmTimeout)
+                    {
+                        llmTimer += Time.deltaTime;
+                        yield return null;
+                    }
+
+                    if (!task.IsCompleted)
+                    {
+                        cts.Cancel();
+                        Plugin.Instance.Log.LogWarning("LLM Request timed out.");
+                        continue;
+                    }
+
+                    if (task.IsFaulted)
+                    {
+                        Plugin.Instance.Log.LogError($"LLM Error: {task.Exception}");
+                        continue;
+                    }
+
+                    var response = task.Result;
+
+                    // 3. Parse & Act
+                    var decision = ResponseParser.Parse(response);
+                    if (decision == null) continue;
+
+                    if (Plugin.Instance.DebugLogging.Value)
+                    {
+                        Plugin.Instance.Log.LogInfo($"Agent Reasoning: {decision.Reasoning}");
+                    }
+
+                    _dispatcher.Dispatch(decision);
                 }
-
-                if (!task.IsCompleted)
-                {
-                    Plugin.Instance.Log.LogWarning("LLM Request timed out.");
-                    continue;
-                }
-
-                if (task.IsFaulted)
-                {
-                    Plugin.Instance.Log.LogError($"LLM Error: {task.Exception}");
-                    continue;
-                }
-
-                var response = task.Result;
-
-                // 3. Parse & Act
-                var decision = ResponseParser.Parse(response);
-                if (decision == null) continue;
-
-                if (Plugin.Instance.DebugLogging.Value)
-                {
-                    Plugin.Instance.Log.LogInfo($"Agent Reasoning: {decision.Reasoning}");
-                }
-
-                _dispatcher.Dispatch(decision);
             }
         }
 

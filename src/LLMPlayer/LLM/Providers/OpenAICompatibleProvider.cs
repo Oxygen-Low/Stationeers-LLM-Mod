@@ -51,9 +51,15 @@ namespace LLMPlayer.LLM.Providers
                 };
 
                 ChatCompletion completion = await _client.CompleteChatAsync(messages, null, cancellationToken);
-                if (completion != null && completion.Content != null && completion.Content.Count > 0)
+                if (completion != null && completion.Content != null)
                 {
-                    return completion.Content[0].Text;
+                    foreach (var part in completion.Content)
+                    {
+                        if (!string.IsNullOrWhiteSpace(part.Text))
+                        {
+                            return part.Text;
+                        }
+                    }
                 }
                 return "Error: Empty response from OpenAI compatible provider.";
             }

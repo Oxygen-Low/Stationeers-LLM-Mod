@@ -44,11 +44,13 @@ namespace LLMPlayer.LLM.Providers
                     {
                         var responseBody = await response.Content.ReadAsStringAsync();
                         var result = JsonConvert.DeserializeObject<KoboldResponse>(responseBody);
-                        if (result != null && result.results != null && result.results.Count > 0)
+                        if (result != null && result.results != null && result.results.Count > 0 && !string.IsNullOrWhiteSpace(result.results[0].text))
                         {
                             return result.results[0].text;
                         }
-                        return "Error: Empty response from Kobold provider.";
+
+                        Plugin.Instance.Log.LogWarning($"Kobold Provider: Received empty or missing text. Status: {response.StatusCode}, Body: {responseBody}");
+                        return "Error: Empty or missing text in Kobold response";
                     }
                     else
                     {

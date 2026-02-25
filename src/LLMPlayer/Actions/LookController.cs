@@ -15,7 +15,17 @@ namespace LLMPlayer.Actions
 
         public void RotateYaw(float degrees)
         {
-            _human.transform.Rotate(Vector3.up, degrees);
+            try
+            {
+                if (_human != null && _human.transform != null)
+                {
+                    _human.transform.Rotate(Vector3.up, degrees);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Plugin.Instance.Log.LogError($"Error in RotateYaw: {ex.Message}");
+            }
         }
 
         public void RotatePitch(float degrees)
