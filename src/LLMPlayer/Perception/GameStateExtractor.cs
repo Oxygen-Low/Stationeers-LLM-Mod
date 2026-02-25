@@ -20,16 +20,23 @@ namespace LLMPlayer.Perception
             context.FacingDirection = human.transform.forward.ToString();
 
             // Extract Inventory
-            foreach (var slot in human.Slots)
+            if (human.Slots == null)
             {
-                var occupant = slot.Get();
-                if (occupant != null)
+                context.Inventory.Add("No slots available");
+            }
+            else
+            {
+                foreach (var slot in human.Slots)
                 {
-                    context.Inventory.Add($"{slot.StringKey}: {occupant.DisplayName}");
-                }
-                else
-                {
-                    context.Inventory.Add($"{slot.StringKey}: Empty");
+                    var occupant = slot.Get();
+                    if (occupant != null)
+                    {
+                        context.Inventory.Add($"{slot.StringKey}: {occupant.DisplayName}");
+                    }
+                    else
+                    {
+                        context.Inventory.Add($"{slot.StringKey}: Empty");
+                    }
                 }
             }
 
@@ -38,7 +45,7 @@ namespace LLMPlayer.Perception
             var activeHandTraverse = Traverse.Create(human).Property("ActiveHandSlot");
             if (activeHandTraverse.PropertyExists())
             {
-                var activeSlot = activeHandTraverse.Method("Get").GetValue<Slot>();
+                var activeSlot = activeHandTraverse.GetValue<Slot>();
                 if (activeSlot != null)
                 {
                     var occupant = activeSlot.Get();

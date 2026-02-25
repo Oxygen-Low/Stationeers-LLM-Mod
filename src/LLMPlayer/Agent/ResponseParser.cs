@@ -8,6 +8,8 @@ namespace LLMPlayer.Agent
     {
         public static AgentDecision Parse(string response)
         {
+            if (string.IsNullOrWhiteSpace(response)) return new AgentDecision();
+
             var decision = new AgentDecision();
             var lines = response.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -57,6 +59,9 @@ namespace LLMPlayer.Agent
                         else action.Parameters[key.ToLowerInvariant()] = val;
                     }
                 }
+
+                if (string.IsNullOrWhiteSpace(action.Name)) return null;
+
                 return action;
             }
             catch (Exception ex)

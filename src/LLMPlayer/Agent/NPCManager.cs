@@ -12,6 +12,11 @@ namespace LLMPlayer.Agent
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
             Instance = this;
         }
 
@@ -31,6 +36,12 @@ namespace LLMPlayer.Agent
             // We try to instantiate a new Human.
             GameObject botObj = Instantiate(localHuman.gameObject, localHuman.Position + localHuman.transform.forward * 2f, localHuman.transform.rotation);
             var botHuman = botObj.GetComponent<Human>();
+            if (botHuman == null)
+            {
+                Plugin.Instance.Log.LogError("Cloned GameObject does not have a Human component. Destroying bot.");
+                Destroy(botObj);
+                return;
+            }
 
             // Sanitize bot: Remove/Disable local player specific components
             // This is a list of typical components that might cause issues if cloned

@@ -10,7 +10,7 @@ namespace LLMPlayer.Actions
 
         public MovementController(Human human)
         {
-            _human = human;
+            _human = human ?? throw new System.ArgumentNullException(nameof(human));
         }
 
         public void Move(string direction)

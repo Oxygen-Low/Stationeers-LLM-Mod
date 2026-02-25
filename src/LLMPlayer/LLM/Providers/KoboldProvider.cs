@@ -19,10 +19,11 @@ namespace LLMPlayer.LLM.Providers
             _model = model;
         }
 
-        public async Task<string> GetResponseAsync(byte[] imageBytes, string systemPrompt, string userMessage)
+        public async Task<string> GetResponseAsync(byte[] imageBytes, string systemPrompt, string userMessage, System.Threading.CancellationToken cancellationToken)
         {
-            using (var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(30)))
+            using (var cts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
+                cts.CancelAfter(TimeSpan.FromSeconds(30));
                 try
                 {
                     // Kobold.cpp standard multimodal format
@@ -32,7 +33,8 @@ namespace LLMPlayer.LLM.Providers
                         images = new[] { Convert.ToBase64String(imageBytes) },
                         max_context_length = 2048,
                         max_length = 512,
-                        quiet = true
+                        quiet = true,
+                        model = _model
                     };
 
                     var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
@@ -65,10 +67,11 @@ namespace LLMPlayer.LLM.Providers
             }
         }
 
-        public async Task<bool> CheckHealthAsync()
+        public async Task<bool> CheckHealthAsync(System.Threading.CancellationToken cancellationToken)
         {
-            using (var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5)))
+            using (var cts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
             {
+                cts.CancelAfter(TimeSpan.FromSeconds(5));
                 try
                 {
                     var response = await _httpClient.GetAsync($"{_endpoint}/api/v1/model", cts.Token);
@@ -83,9 +86,14 @@ namespace LLMPlayer.LLM.Providers
 
         public bool ValidateConfig(out string error)
         {
-            if (string.IsNullOrEmpty(_endpoint))
+            if (string.IsNullOrWhiteSpace(_endpoint) || !Uri.TryCreate(_endpoint, UriKind.Absolute, out _))
             {
-                error = "Kobold endpoint is not configured.";
+                error = "Kobold endpoint is invalid or empty.";
+                return false;
+            }
+            if (string.IsNullOrEmpty(_model))
+            {
+                error = "Kobold model is not configured.";
                 return false;
             }
             error = null;

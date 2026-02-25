@@ -28,20 +28,29 @@ namespace LLMPlayer.LLM.Providers
             _client = _openAiClient.GetChatClient(model);
         }
 
-        public async Task<string> GetResponseAsync(byte[] imageBytes, string systemPrompt, string userMessage)
+        public async Task<string> GetResponseAsync(byte[] imageBytes, string systemPrompt, string userMessage, System.Threading.CancellationToken cancellationToken)
         {
             try
             {
+                var contentParts = new List<ChatMessageContentPart>();
+                contentParts.Add(ChatMessageContentPart.CreateTextPart(userMessage));
+
+                if (imageBytes != null && imageBytes.Length > 0)
+                {
+                    contentParts.Add(ChatMessageContentPart.CreateImagePart(BinaryData.FromBytes(imageBytes), "image/png"));
+                }
+                else
+                {
+                    Plugin.Instance.Log.LogWarning("OpenAI Provider: Image bytes are null or empty. Sending text-only request.");
+                }
+
                 var messages = new List<ChatMessage>
                 {
                     new SystemChatMessage(systemPrompt),
-                    new UserChatMessage(
-                        ChatMessageContentPart.CreateTextPart(userMessage),
-                        ChatMessageContentPart.CreateImagePart(BinaryData.FromBytes(imageBytes), "image/png")
-                    )
+                    new UserChatMessage(contentParts)
                 };
 
-                ChatCompletion completion = await _client.CompleteChatAsync(messages);
+                ChatCompletion completion = await _client.CompleteChatAsync(messages, null, cancellationToken);
                 if (completion != null && completion.Content != null && completion.Content.Count > 0)
                 {
                     return completion.Content[0].Text;
@@ -55,19 +64,21 @@ namespace LLMPlayer.LLM.Providers
             }
         }
 
-        public async Task<bool> CheckHealthAsync()
+        public async Task<bool> CheckHealthAsync(System.Threading.CancellationToken cancellationToken)
         {
             try
             {
-                // Simple probe: list models
-                // Note: The OpenAI SDK version might vary, but listing models is a common health check.
-                // If the specific endpoint doesn't support it, this might fail, but it's better than nothing.
-                // For OpenRouter, this should work.
-                return true; // Assume true for now as listing models might not be in the simple ChatClient
+                // Simple probe: send a very small completion request with minimal tokens
+                // or just listing models if we had the right client.
+                // With ChatClient, we can try a very small completion.
+                var messages = new List<ChatMessage> { new UserChatMessage("health check") };
+                var options = new ChatCompletionOptions { MaxOutputTokenCount = 1 };
+                await _client.CompleteChatAsync(messages, options, cancellationToken);
+                return true;
             }
             catch (Exception ex)
             {
-                Plugin.Instance.Log.LogError($"OpenAI Health Check Failed: {ex.Message}");
+                Plugin.Instance.Log.LogError($"OpenAI Health Check Failed: {ex.ToString()}");
                 return false;
             }
         }

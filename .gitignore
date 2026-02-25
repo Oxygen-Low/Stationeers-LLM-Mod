@@ -38,8 +38,8 @@ DerivedData/
 .springBeans/
 .springExplorer/
 .springProperties/
-.tern-project/
-.tern-port/
+.tern-project
+.tern-port
 .tern-config/
 .tern-definitions/
 .tern-plugins/

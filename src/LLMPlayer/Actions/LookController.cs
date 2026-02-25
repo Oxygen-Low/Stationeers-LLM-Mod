@@ -10,7 +10,7 @@ namespace LLMPlayer.Actions
 
         public LookController(Human human)
         {
-            _human = human;
+            _human = human ?? throw new System.ArgumentNullException(nameof(human));
         }
 
         public void RotateYaw(float degrees)
@@ -20,12 +20,27 @@ namespace LLMPlayer.Actions
 
         public void RotatePitch(float degrees)
         {
-            // Pitch usually affects the head or camera
-            // In Stationeers, there is a Head rotation
-            var head = Traverse.Create(_human).Property("Head").GetValue<Transform>();
-            if (head != null)
+            try
             {
-                head.Rotate(Vector3.right, degrees);
+                // Pitch usually affects the head or camera
+                // In Stationeers, there is a Head rotation
+                var headTraverse = Traverse.Create(_human).Property("Head");
+                if (headTraverse.PropertyExists())
+                {
+                    var head = headTraverse.GetValue<Transform>();
+                    if (head != null)
+                    {
+                        head.Rotate(Vector3.right, degrees);
+                    }
+                }
+                else
+                {
+                    Plugin.Instance.Log.LogWarning($"Property 'Head' not found on Human {_human.ReferenceId}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Plugin.Instance.Log.LogError($"Error in RotatePitch: {ex.Message}");
             }
         }
     }

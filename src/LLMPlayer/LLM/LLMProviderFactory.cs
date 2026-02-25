@@ -20,11 +20,11 @@ namespace LLMPlayer.LLM
                 case LLMProviderType.OpenAICompatible:
                     if (string.IsNullOrWhiteSpace(config.OpenAIEndpoint.Value))
                         throw new ArgumentException("OpenAI endpoint is empty");
-                    if (string.IsNullOrWhiteSpace(config.OpenAIKey.Value))
-                        throw new ArgumentException("OpenAI API key is missing");
+                    if (string.IsNullOrWhiteSpace(config.OpenAIKey))
+                        throw new ArgumentException("OpenAI API key is missing. Set STATIONEERS_LLM_OPENAI_KEY env var or llm_openai_key.txt file.");
                     if (string.IsNullOrWhiteSpace(config.OpenAIModel.Value))
                         throw new ArgumentException("OpenAI model is empty");
-                    return new OpenAICompatibleProvider(config.OpenAIEndpoint.Value, config.OpenAIKey.Value, config.OpenAIModel.Value);
+                    return new OpenAICompatibleProvider(config.OpenAIEndpoint.Value, config.OpenAIKey, config.OpenAIModel.Value);
 
                 case LLMProviderType.Kobold:
                     if (string.IsNullOrWhiteSpace(config.KoboldEndpoint.Value))

@@ -18,6 +18,13 @@ namespace LLMPlayer.Agent
         private void Awake()
         {
             _human = GetComponent<Human>();
+            if (_human == null)
+            {
+                Plugin.Instance.Log.LogError($"Human component not found on GameObject {gameObject.name}. Agent initialization aborted.");
+                _isActive = false;
+                return;
+            }
+
             _dispatcher = new ActionDispatcher(_human);
 
             try
@@ -51,21 +58,45 @@ namespace LLMPlayer.Agent
             StartCoroutine(AgentLoop());
         }
 
+        private const float HEALTH_CHECK_TIMEOUT = 10.0f;
+
         private IEnumerator AgentLoop()
         {
+            if (_llmProvider == null)
+            {
+                Plugin.Instance.Log.LogError("LLM Provider is null. Agent loop will not start.");
+                _isActive = false;
+                yield break;
+            }
+
             // Health check before starting
-            var healthTask = _llmProvider.CheckHealthAsync();
-            yield return new WaitUntil(() => healthTask.IsCompleted);
+            var healthTask = _llmProvider.CheckHealthAsync(System.Threading.CancellationToken.None);
+            float healthTimer = 0;
+            while (!healthTask.IsCompleted && healthTimer < HEALTH_CHECK_TIMEOUT)
+            {
+                healthTimer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (!healthTask.IsCompleted)
+            {
+                Plugin.Instance.Log.LogError("LLM Provider health check timed out. Agent loop will not start.");
+                _isActive = false;
+                yield break;
+            }
+
             if (healthTask.IsFaulted || !healthTask.Result)
             {
-                Plugin.Instance.Log.LogError("LLM Provider health check failed. Agent loop will not start.");
+                Plugin.Instance.Log.LogError("LLM Provider health check failed or returned unhealthy. Agent loop will not start.");
                 _isActive = false;
                 yield break;
             }
 
             while (_isActive)
             {
-                yield return new WaitForSeconds(1.0f / Plugin.Instance.AgentTickRate.Value);
+                float tickRate = Plugin.Instance.AgentTickRate.Value;
+                if (tickRate <= 0.01f) tickRate = 0.01f; // Avoid division by zero
+                yield return new WaitForSeconds(1.0f / tickRate);
 
                 if (_human == null || _human.IsDead) continue;
 
@@ -95,7 +126,7 @@ namespace LLMPlayer.Agent
                 var prompt = ContextBuilder.BuildPrompt(context);
 
                 // 2. Reason (Query LLM)
-                var task = _llmProvider.GetResponseAsync(screenshot, PromptTemplates.SystemPrompt, prompt);
+                var task = _llmProvider.GetResponseAsync(screenshot, PromptTemplates.SystemPrompt, prompt, System.Threading.CancellationToken.None);
 
                 float llmTimeout = 30.0f;
                 float llmTimer = 0;
@@ -135,9 +166,22 @@ namespace LLMPlayer.Agent
         public void SetActive(bool active)
         {
             if (_isActive == active) return;
-            _isActive = active;
-            if (active) StartCoroutine(AgentLoop());
-            else StopAllCoroutines();
+
+            if (active)
+            {
+                if (_llmProvider == null)
+                {
+                    Plugin.Instance.Log.LogWarning("Cannot activate AI: LLM Provider is not initialized.");
+                    return;
+                }
+                _isActive = true;
+                StartCoroutine(AgentLoop());
+            }
+            else
+            {
+                _isActive = false;
+                StopAllCoroutines();
+            }
         }
     }
 }

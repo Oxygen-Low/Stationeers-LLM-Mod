@@ -23,7 +23,7 @@ namespace LLMPlayer
         public ConfigEntry<string> OllamaEndpoint { get; private set; }
         public ConfigEntry<string> OllamaModel { get; private set; }
         public ConfigEntry<string> OpenAIEndpoint { get; private set; }
-        public ConfigEntry<string> OpenAIKey { get; private set; }
+        public string OpenAIKey { get; private set; }
         public ConfigEntry<string> OpenAIModel { get; private set; }
         public ConfigEntry<string> KoboldEndpoint { get; private set; }
         public ConfigEntry<string> KoboldModel { get; private set; }
@@ -74,7 +74,18 @@ namespace LLMPlayer
             OllamaModel = Config.Bind("Ollama", "Model", "gemma3:4b", "Ollama model name.");
 
             OpenAIEndpoint = Config.Bind("OpenAI", "Endpoint", "https://openrouter.ai/api/v1", "OpenAI-compatible API endpoint.");
-            OpenAIKey = Config.Bind("OpenAI", "ApiKey", "", "API key for the provider.");
+
+            // OpenAIKey is loaded from environment variable or local file for security
+            OpenAIKey = System.Environment.GetEnvironmentVariable("STATIONEERS_LLM_OPENAI_KEY");
+            if (string.IsNullOrEmpty(OpenAIKey))
+            {
+                string keyPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Info.Location), "llm_openai_key.txt");
+                if (System.IO.File.Exists(keyPath))
+                {
+                    OpenAIKey = System.IO.File.ReadAllText(keyPath).Trim();
+                }
+            }
+
             OpenAIModel = Config.Bind("OpenAI", "Model", "google/gemma-2-9b-it:free", "Model name.");
 
             KoboldEndpoint = Config.Bind("Kobold", "Endpoint", "http://localhost:5001", "Kobold.cpp API endpoint.");
@@ -82,7 +93,7 @@ namespace LLMPlayer
 
             AgentTickRate = Config.Bind("Agent", "TickRate", 1.0f,
                 new ConfigDescription("How many times per second the agent should make a decision.", new AcceptableValueRange<float>(0.1f, 20.0f)));
-            DebugLogging = Config.Bind("Debug", "VerboseLogging", true, "Enable detailed debug logging.");
+            DebugLogging = Config.Bind("Debug", "VerboseLogging", false, "Enable detailed debug logging.");
             ScreenshotResolution = Config.Bind("Perception", "ResolutionScale", 512,
                 new ConfigDescription("The square resolution of screenshots sent to LLM.", new AcceptableValueRange<int>(128, 1024)));
             ToggleAiKey = Config.Bind("Agent", "ToggleKey", KeyCode.F9, "Hotkey to toggle AI control for all bots.");

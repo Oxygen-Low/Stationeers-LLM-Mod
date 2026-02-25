@@ -33,7 +33,13 @@ namespace LLMPlayer.Actions
 
         private void ExecuteAction(AgentAction action)
         {
-            string actionName = (action.Name ?? "UNKNOWN").ToUpperInvariant();
+            if (action == null || string.IsNullOrWhiteSpace(action.Name))
+            {
+                Plugin.Instance.Log.LogWarning("Received null action or action with no name.");
+                return;
+            }
+
+            string actionName = action.Name.ToUpperInvariant();
             Plugin.Instance.Log.LogInfo($"Executing Action: {actionName}");
             switch (actionName)
             {

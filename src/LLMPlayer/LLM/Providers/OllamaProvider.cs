@@ -19,7 +19,7 @@ namespace LLMPlayer.LLM.Providers
             _model = model;
         }
 
-        public async Task<string> GetResponseAsync(byte[] imageBytes, string systemPrompt, string userMessage)
+        public async Task<string> GetResponseAsync(byte[] imageBytes, string systemPrompt, string userMessage, System.Threading.CancellationToken cancellationToken)
         {
             try
             {
@@ -32,12 +32,15 @@ namespace LLMPlayer.LLM.Providers
                     Stream = false
                 };
 
-                string fullResponse = "";
-                await foreach (var response in _client.Generate(request))
+                var fullResponse = new System.Text.StringBuilder();
+                await foreach (var response in _client.Generate(request, cancellationToken))
                 {
-                    fullResponse += response.Response;
+                    if (response != null && response.Response != null)
+                    {
+                        fullResponse.Append(response.Response);
+                    }
                 }
-                return fullResponse;
+                return fullResponse.ToString();
             }
             catch (Exception ex)
             {
@@ -46,10 +49,12 @@ namespace LLMPlayer.LLM.Providers
             }
         }
 
-        public async Task<bool> CheckHealthAsync()
+        public async Task<bool> CheckHealthAsync(System.Threading.CancellationToken cancellationToken)
         {
             try
             {
+                // Note: OllamaSharp might not take cancellationToken for IsRunning in this version,
+                // but we include it in signature.
                 return await _client.IsRunning();
             }
             catch
