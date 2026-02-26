@@ -80,7 +80,7 @@ namespace LLMPlayer
 
             // OpenAIKey is loaded from environment variable or local file for security
             OpenAIKey = System.Environment.GetEnvironmentVariable("STATIONEERS_LLM_OPENAI_KEY");
-            if (string.IsNullOrEmpty(OpenAIKey))
+            if (string.IsNullOrWhiteSpace(OpenAIKey))
             {
                 try
                 {

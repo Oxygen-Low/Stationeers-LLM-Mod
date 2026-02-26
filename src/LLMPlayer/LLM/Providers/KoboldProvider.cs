@@ -42,24 +42,27 @@ namespace LLMPlayer.LLM.Providers
                         Plugin.Instance.Log.LogWarning("Kobold Provider: Image bytes are null or empty. Sending text-only request.");
                     }
 
-                    var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
-                    var response = await _httpClient.PostAsync($"{_endpoint}/api/v1/generate", content, cts.Token);
-
-                    if (response.IsSuccessStatusCode)
+                    using (var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"))
                     {
-                        var responseBody = await response.Content.ReadAsStringAsync();
-                        var result = JsonConvert.DeserializeObject<KoboldResponse>(responseBody);
-                        if (result != null && result.results != null && result.results.Count > 0 && !string.IsNullOrWhiteSpace(result.results[0].text))
+                        using (var response = await _httpClient.PostAsync($"{_endpoint}/api/v1/generate", content, cts.Token))
                         {
-                            return result.results[0].text;
-                        }
+                            if (response.IsSuccessStatusCode)
+                            {
+                                var responseBody = await response.Content.ReadAsStringAsync();
+                                var result = JsonConvert.DeserializeObject<KoboldResponse>(responseBody);
+                                if (result != null && result.results != null && result.results.Count > 0 && !string.IsNullOrWhiteSpace(result.results[0].text))
+                                {
+                                    return result.results[0].text;
+                                }
 
-                        Plugin.Instance.Log.LogWarning($"Kobold Provider: Received empty or missing text. Status: {response.StatusCode}, Body: {responseBody}");
-                        return "Error: Empty or missing text in Kobold response";
-                    }
-                    else
-                    {
-                        return $"Error: {response.StatusCode}";
+                                Plugin.Instance.Log.LogWarning($"Kobold Provider: Received empty or missing text. Status: {response.StatusCode}, Body: {responseBody}");
+                                return "Error: Empty or missing text in Kobold response";
+                            }
+                            else
+                            {
+                                return $"Error: {response.StatusCode}";
+                            }
+                        }
                     }
                 }
                 catch (System.OperationCanceledException)
@@ -85,8 +88,15 @@ namespace LLMPlayer.LLM.Providers
                 cts.CancelAfter(TimeSpan.FromSeconds(5));
                 try
                 {
-                    var response = await _httpClient.GetAsync($"{_endpoint}/api/v1/model", cts.Token);
-                    return response.IsSuccessStatusCode;
+                    using (var response = await _httpClient.GetAsync($"{_endpoint}/api/v1/model", cts.Token))
+                    {
+                        return response.IsSuccessStatusCode;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    if (cancellationToken.IsCancellationRequested) throw;
+                    return false;
                 }
                 catch
                 {
@@ -102,7 +112,7 @@ namespace LLMPlayer.LLM.Providers
                 error = "Kobold endpoint is invalid or empty.";
                 return false;
             }
-            if (string.IsNullOrEmpty(_model))
+            if (string.IsNullOrWhiteSpace(_model))
             {
                 error = "Kobold model is not configured.";
                 return false;

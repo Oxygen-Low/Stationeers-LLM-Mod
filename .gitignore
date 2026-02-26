@@ -40,10 +40,6 @@ DerivedData/
 .springProperties/
 .tern-project
 .tern-port
-.tern-config/
-.tern-definitions/
-.tern-plugins/
-.tern-vfs/
 
 # BepInEx and C# build artifacts
 BepInEx/
