@@ -15,7 +15,7 @@ namespace LLMPlayer.LLM.Providers
 
         public KoboldProvider(string endpoint, string model)
         {
-            _endpoint = endpoint.TrimEnd('/');
+            _endpoint = endpoint?.TrimEnd('/');
             _model = model;
         }
 
@@ -107,11 +107,18 @@ namespace LLMPlayer.LLM.Providers
 
         public bool ValidateConfig(out string error)
         {
-            if (string.IsNullOrWhiteSpace(_endpoint) || !Uri.TryCreate(_endpoint, UriKind.Absolute, out _))
+            if (string.IsNullOrWhiteSpace(_endpoint) || !Uri.TryCreate(_endpoint, UriKind.Absolute, out var uri))
             {
                 error = "Kobold endpoint is invalid or empty.";
                 return false;
             }
+
+            if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            {
+                error = "Kobold endpoint must be an http(s) URL";
+                return false;
+            }
+
             if (string.IsNullOrWhiteSpace(_model))
             {
                 error = "Kobold model is not configured.";

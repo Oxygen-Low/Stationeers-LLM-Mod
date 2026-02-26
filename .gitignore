@@ -21,23 +21,6 @@ DerivedData/
 .vs/
 .vscode/
 .idea/
-.gradle/
-.nb-gradle/
-.settings/
-.project/
-.classpath/
-.factorypath/
-.apt_generated/
-.apt_generated_tests/
-.externalToolBuilders/
-.metadata/
-.checkstyle/
-.fbwarnings/
-.pmd/
-.ruleset/
-.springBeans/
-.springExplorer/
-.springProperties/
 .tern-project
 .tern-port
 

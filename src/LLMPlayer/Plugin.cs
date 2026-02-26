@@ -79,7 +79,7 @@ namespace LLMPlayer
             OpenAIEndpoint = Config.Bind("OpenAI", "Endpoint", "https://openrouter.ai/api/v1", "OpenAI-compatible API endpoint.");
 
             // OpenAIKey is loaded from environment variable or local file for security
-            OpenAIKey = System.Environment.GetEnvironmentVariable("STATIONEERS_LLM_OPENAI_KEY");
+            OpenAIKey = System.Environment.GetEnvironmentVariable("STATIONEERS_LLM_OPENAI_KEY")?.Trim();
             if (string.IsNullOrWhiteSpace(OpenAIKey))
             {
                 try
@@ -116,6 +116,7 @@ namespace LLMPlayer
         private void OnDestroy()
         {
             _harmony?.UnpatchSelf();
+            Instance = null;
             Logger.LogInfo($"{NAME} unloaded.");
         }
     }
