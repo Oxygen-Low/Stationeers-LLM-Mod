@@ -1,0 +1,70 @@
+<Project>
+  <PropertyGroup>
+    <StationeersInstallPath Condition="'$(StationeersInstallPath)' == ''">$(MSBuildThisFileDirectory)../</StationeersInstallPath>
+    <NormalizedStationeersInstallPath Condition="!HasTrailingSlash('$(StationeersInstallPath)')">$(StationeersInstallPath)/</NormalizedStationeersInstallPath>
+    <NormalizedStationeersInstallPath Condition="HasTrailingSlash('$(StationeersInstallPath)')">$(StationeersInstallPath)</NormalizedStationeersInstallPath>
+    <ManagedPath>$(NormalizedStationeersInstallPath)rocketstation_Data/Managed/</ManagedPath>
+    <BepInExCorePath>$(NormalizedStationeersInstallPath)BepInEx/core/</BepInExCorePath>
+  </PropertyGroup>
+
+  <Target Name="ValidateInstallPaths" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(NormalizedStationeersInstallPath)Stationeers.exe') AND !Exists('$(NormalizedStationeersInstallPath)Stationeers.x86_64')" Text="Stationeers executable not found in: $(NormalizedStationeersInstallPath)" />
+    <Error Condition="!Exists('$(ManagedPath)Assembly-CSharp.dll')" Text="Assembly-CSharp.dll not found in: $(ManagedPath)" />
+    <Error Condition="!Exists('$(BepInExCorePath)BepInEx.Core.dll') AND !Exists('$(BepInExCorePath)BepInEx.dll')" Text="BepInEx core assembly not found in: $(BepInExCorePath)" />
+  </Target>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(ManagedPath)Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedPath)UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedPath)UnityEngine.CoreModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>$(ManagedPath)UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(ManagedPath)UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ManagedPath)UnityEngine.UI.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(ManagedPath)UnityEngine.UIModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(ManagedPath)UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(ManagedPath)UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>$(ManagedPath)UnityEngine.UnityWebRequestModule.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>$(BepInExCorePath)BepInEx.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BepInExCorePath)0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ManagedPath)Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,34 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]in/
+[Aa]ssets/AssetStoreTools*
+*.unitypackage
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svntmp
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.DS_Store
+DerivedData/
+.vs/
+.vscode/
+.idea/
+.tern-project
+.tern-port
+
+# BepInEx and C# build artifacts
+BepInEx/
+*.dll
+*.so
+*.dylib
+
+# Visual Studio solution and project files are intentionally not ignored
+# as they are hand-authored for this mod.
