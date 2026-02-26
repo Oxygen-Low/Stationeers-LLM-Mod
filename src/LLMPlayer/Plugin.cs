@@ -103,7 +103,7 @@ namespace LLMPlayer
             OpenAIModel = Config.Bind("OpenAI", "Model", "google/gemma-2-9b-it:free", "Model name.");
 
             KoboldEndpoint = Config.Bind("Kobold", "Endpoint", "http://localhost:5001", "Kobold.cpp API endpoint.");
-            KoboldModel = Config.Bind("Kobold", "Model", "", "Kobold.cpp model name (optional for some setups).");
+            KoboldModel = Config.Bind("Kobold", "Model", "", "Kobold.cpp model name (required).");
 
             AgentTickRate = Config.Bind("Agent", "TickRate", 1.0f,
                 new ConfigDescription("How many times per second the agent should make a decision.", new AcceptableValueRange<float>(0.1f, 20.0f)));

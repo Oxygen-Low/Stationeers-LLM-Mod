@@ -57,7 +57,7 @@ namespace LLMPlayer.Perception
 
                     if (request.hasError)
                     {
-                        CaptureSync(callback);
+                        CaptureSync(localRT, localRes, callback);
                     }
                     else
                     {
@@ -65,24 +65,31 @@ namespace LLMPlayer.Perception
                         // Use RGB24 matching format
                         var format = UnityEngine.Experimental.Rendering.GraphicsFormatUtility.GetGraphicsFormat(TextureFormat.RGB24, false);
                         var pngBytes = ImageConversion.EncodeNativeArrayToPNG(data, format, (uint)localRes, (uint)localRes);
-                        callback?.Invoke(pngBytes.ToArray());
+                        try
+                        {
+                            callback?.Invoke(pngBytes.ToArray());
+                        }
+                        finally
+                        {
+                            pngBytes.Dispose();
+                        }
                     }
                 });
             }
             else
             {
-                CaptureSync(callback);
+                CaptureSync(localRT, localRes, callback);
             }
         }
 
-        private void CaptureSync(Action<byte[]> callback)
+        private void CaptureSync(RenderTexture rt, int res, Action<byte[]> callback)
         {
-            if (_renderTexture == null) return;
+            if (rt == null) return;
 
             var priorActive = RenderTexture.active;
-            RenderTexture.active = _renderTexture;
-            Texture2D tex = new Texture2D(_resolution, _resolution, TextureFormat.RGB24, false);
-            tex.ReadPixels(new Rect(0, 0, _resolution, _resolution), 0, 0);
+            RenderTexture.active = rt;
+            Texture2D tex = new Texture2D(res, res, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, res, res), 0, 0);
             tex.Apply();
             RenderTexture.active = priorActive;
 

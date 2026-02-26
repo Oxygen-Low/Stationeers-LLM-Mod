@@ -64,6 +64,10 @@ namespace LLMPlayer.LLM.Providers
                 }
                 catch (System.OperationCanceledException)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
                     return "Error: Kobold request timed out.";
                 }
                 catch (Exception ex)

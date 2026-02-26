@@ -104,7 +104,7 @@ namespace LLMPlayer.LLM.Providers
                 error = "OpenAI API key is missing.";
                 return false;
             }
-            if (string.IsNullOrEmpty(_model))
+            if (string.IsNullOrWhiteSpace(_model))
             {
                 error = "OpenAI model name is not configured.";
                 return false;
