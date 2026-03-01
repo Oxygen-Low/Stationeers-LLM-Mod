@@ -1,14 +1,12 @@
 <Project>
   <PropertyGroup>
-    <StationeersInstallPath Condition="'$(StationeersInstallPath)' == ''">$(MSBuildThisFileDirectory)../</StationeersInstallPath>
-    <NormalizedStationeersInstallPath Condition="!HasTrailingSlash('$(StationeersInstallPath)')">$(StationeersInstallPath)/</NormalizedStationeersInstallPath>
-    <NormalizedStationeersInstallPath Condition="HasTrailingSlash('$(StationeersInstallPath)')">$(StationeersInstallPath)</NormalizedStationeersInstallPath>
-    <ManagedPath>$(NormalizedStationeersInstallPath)rocketstation_Data/Managed/</ManagedPath>
-    <BepInExCorePath>$(NormalizedStationeersInstallPath)BepInEx/core/</BepInExCorePath>
+    <!-- Use a 'files' folder in the root directory for dependencies, as requested -->
+    <DependenciesPath>$(MSBuildThisFileDirectory)../files/</DependenciesPath>
+    <ManagedPath>$(DependenciesPath)</ManagedPath>
+    <BepInExCorePath>$(DependenciesPath)</BepInExCorePath>
   </PropertyGroup>
 
   <Target Name="ValidateInstallPaths" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('$(NormalizedStationeersInstallPath)Stationeers.exe') AND !Exists('$(NormalizedStationeersInstallPath)Stationeers.x86_64')" Text="Stationeers executable not found in: $(NormalizedStationeersInstallPath)" />
     <Error Condition="!Exists('$(ManagedPath)Assembly-CSharp.dll')" Text="Assembly-CSharp.dll not found in: $(ManagedPath)" />
     <Error Condition="!Exists('$(BepInExCorePath)BepInEx.Core.dll') AND !Exists('$(BepInExCorePath)BepInEx.dll')" Text="BepInEx core assembly not found in: $(BepInExCorePath)" />
   </Target>
